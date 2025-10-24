@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/auth-utils";
 import { caller } from "@/trpc/server";
+import ClientComponent from "./client";
 import LogoutButton from "./logout";
 
 export default async function Home() {
@@ -9,7 +10,10 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      {JSON.stringify(data, null, 2)}
+      <p>{JSON.stringify(data)}</p>
+
+      <ClientComponent />
+
       <LogoutButton />
     </div>
   );
