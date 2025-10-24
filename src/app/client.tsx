@@ -23,6 +23,11 @@ export default function ClientComponent() {
           richColors: true,
         });
       },
+      onError: () => {
+        toast.error("An error occured", {
+          richColors: true,
+        });
+      },
     })
   );
 
