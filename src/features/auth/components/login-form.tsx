@@ -55,7 +55,7 @@ export function LoginForm() {
         onSuccess: () => {
           router.push("/");
         },
-        onError: (ctx) => {
+        onError: (ctx: any) => {
           toast.error(ctx.error.message);
         },
       }
