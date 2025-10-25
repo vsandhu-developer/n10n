@@ -3,6 +3,6 @@ import { inferInput } from "@trpc/tanstack-react-query";
 
 type Input = inferInput<typeof trpc.workflows.getMany>;
 
-export const prefetchWorflows = (params: Input) => {
+export const prefetchWorkflows = (params: Input) => {
   return prefetch(trpc.workflows.getMany.queryOptions(params));
 };
