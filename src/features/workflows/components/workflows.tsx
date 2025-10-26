@@ -50,7 +50,7 @@ export const WorkflowsPagination = () => {
   );
 };
 
-export default function WorflowsList() {
+export default function WorkflowsList() {
   const workflows = useSuspenseWorkflows();
 
   return (
@@ -152,7 +152,7 @@ export const WorkflowItem = ({ data }: { data: WorkFlow }) => {
 
   return (
     <EntityItem
-      href={`/worflows/${data.id}`}
+      href={`/workflows/${data.id}`}
       title={data.name}
       subtitle={
         <>
