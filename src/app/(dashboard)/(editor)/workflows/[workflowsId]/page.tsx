@@ -19,12 +19,12 @@ export default async function WorkflowId({ params }: PageProps) {
   const { workflowsId } = await params;
   prefetchWorkflow(workflowsId);
   return (
-    <div>
+    <div className="h-screen flex flex-col">
       <HydrateClient>
         <ErrorBoundary fallback={<EditorError />}>
           <Suspense fallback={<EditorLoading />}>
             <EditorHeader workflowId={workflowsId} />
-            <main className="flex-1">
+            <main className="flex-1 min-h-0">
               <Editor workflowId={workflowsId} />
             </main>
           </Suspense>
