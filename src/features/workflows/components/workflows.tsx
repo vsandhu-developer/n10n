@@ -1,17 +1,27 @@
 "use client";
 
+import { formatDistanceToNow } from "date-fns";
+
 import {
+  EmptyView,
   EntityContainer,
   EntityHeader,
+  EntityItem,
+  EntityList,
   EntityPagination,
   EntitySearch,
+  ErrorView,
+  LoadingView,
 } from "@/components/entity-components";
+import type { WorkFlow } from "@/generated/prisma/client";
 import { useEntitySearch } from "@/hooks/use-entity-search";
 import { useUpgradeModal } from "@/hooks/use-upgrade-model";
+import { WorkflowIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import {
   useCreateWorkflow,
+  useRemoveWorkflow,
   useSuspenseWorkflows,
 } from "../hooks/use-workflows";
 import { useWorkflowsParams } from "../hooks/use-workflows-params";
@@ -44,9 +54,12 @@ export default function WorflowsList() {
   const workflows = useSuspenseWorkflows();
 
   return (
-    <div className="flex-1 flex justify-center items-center">
-      <p>{JSON.stringify(workflows.data, null, 2)}</p>
-    </div>
+    <EntityList
+      items={workflows.data.items}
+      getKey={(workflow) => workflow.id}
+      renderItem={(workflow) => <WorkflowItem data={workflow} />}
+      emptyView={<WorkflowsEmpty />}
+    />
   );
 }
 
@@ -92,5 +105,68 @@ export const WorkflowsContainer = ({
     >
       {children}
     </EntityContainer>
+  );
+};
+
+export const WorkflowsLoading = () => {
+  return <LoadingView message="Loading Workflows..." />;
+};
+
+export const WorkflowsError = () => {
+  return <ErrorView message="Error Loading Workflows..." />;
+};
+
+export const WorkflowsEmpty = () => {
+  const router = useRouter();
+  const createWorkflow = useCreateWorkflow();
+  const { handleError, modal } = useUpgradeModal();
+
+  const handleCreate = () => {
+    createWorkflow.mutate(undefined, {
+      onError: (error) => {
+        handleError(error);
+      },
+      onSuccess: (data) => {
+        router.push(`/workflows/${data.id}`);
+      },
+    });
+  };
+
+  return (
+    <>
+      {modal}
+      <EmptyView
+        message="You havn't created any workflows yet. Get started by creating you first workflow."
+        onNew={handleCreate}
+      />
+    </>
+  );
+};
+
+export const WorkflowItem = ({ data }: { data: WorkFlow }) => {
+  const removeWorflow = useRemoveWorkflow();
+
+  const handleRemove = () => {
+    removeWorflow.mutate({ id: data.id });
+  };
+
+  return (
+    <EntityItem
+      href={`/worflows/${data.id}`}
+      title={data.name}
+      subtitle={
+        <>
+          Updated {formatDistanceToNow(data.updatedAt)} &bull; Created{" "}
+          {formatDistanceToNow(data.createdAt)}
+        </>
+      }
+      image={
+        <div className="size-8 flex items-center justify-center">
+          <WorkflowIcon className="size-5 text-muted-foreground" />
+        </div>
+      }
+      onRemove={handleRemove}
+      isRemoving={removeWorflow.isPending}
+    />
   );
 };
