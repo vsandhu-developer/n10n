@@ -24,11 +24,6 @@ export const workflowRouter = createTRPCRouter({
                 position: { x: 0, y: 0 },
                 name: NodeType.INITIAL,
               },
-              {
-                type: NodeType.INITIAL,
-                position: { x: 0, y: 200 },
-                name: NodeType.INITIAL,
-              },
             ],
           },
         },
@@ -60,6 +55,80 @@ export const workflowRouter = createTRPCRouter({
       });
     }),
 
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+
+        nodes: z.array(
+          z.object({
+            id: z.string(),
+            type: z
+              .enum(Object.values(NodeType) as [string, ...string[]])
+              .nullish(),
+            position: z.object({ x: z.number(), y: z.number() }),
+            data: z.record(z.string(), z.any()).optional(),
+          })
+        ),
+        edges: z.array(
+          z.object({
+            source: z.string(),
+            target: z.string(),
+            sourceHandle: z.string().nullish(),
+            targetHandle: z.string().nullish(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, nodes, edges } = input;
+
+      const workflow = await prisma.workFlow.findUniqueOrThrow({
+        where: {
+          id: id,
+          userId: ctx.auth.user.id,
+        },
+      });
+
+      return await prisma.$transaction(async (tx) => {
+        await tx.nodes.deleteMany({
+          where: { workFlowId: id },
+        });
+
+        await tx.nodes.createMany({
+          data: nodes.map((node) => ({
+            id: node.id,
+            workFlowId: id,
+            name: node.type || "unknown",
+            type: node.type as NodeType,
+            position: node.position,
+            data: node.data || {},
+          })),
+        });
+
+        await tx.connection.createMany({
+          data: edges.map((edge) => ({
+            workFlowId: id,
+            fromNodeId: edge.source,
+            toNodeId: edge.target,
+            fromOutput: edge.sourceHandle || "main",
+            toInput: edge.targetHandle || "main",
+          })),
+        });
+
+        // update workflow's updatedAt Datetime
+
+        await tx.workFlow.update({
+          where: {
+            id: id,
+          },
+          data: { updatedAt: new Date() },
+        });
+
+        return workflow;
+      });
+    }),
+
   getOne: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -83,7 +152,7 @@ export const workflowRouter = createTRPCRouter({
         source: connection.fromNodeId,
         target: connection.toNodeId,
         sourceHandle: connection.fromOutput,
-        targetHandle: connection.toNodeId,
+        targetHandle: connection.toInput,
       }));
 
       return {
